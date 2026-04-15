@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeBlood | Interactive Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for Interactive Data Vis -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="blood-drop"></div>
+                <h2>LifeBlood</h2>
+            </div>
+            <nav class="side-nav">
+                <a href="#" class="nav-item active" data-tooltip="View live analytics">
+                    <span class="icon">📊</span> Overview
+                </a>
+                <a href="index.html" class="nav-item">
+                    <span class="icon">🏠</span> Main Website
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">🩸</span> Inventory
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">👥</span> Donors Hub
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="admin-profile interactive-hover">
+                    <div class="avatar">AD</div>
+                    <div class="admin-info">
+                        <h4>Admin Panel</h4>
+                        <p>🟢 System Online</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div>
+                    <h1>Interactive Analytics</h1>
+                    <p class="subtitle">Live data tracking & system metrics</p>
+                </div>
+                <div class="header-actions">
+                    <div class="search-bar">
+                        <i>🔍</i>
+                        <input type="text" id="global-search" placeholder="Search donors or requests...">
+                    </div>
+                    <button class="action-btn" id="notify-btn">
+                        🔔 <span class="badge">3</span>
+                    </button>
+                    <button class="action-btn primary" id="generate-report">📄 Export Report</button>
+                </div>
+            </header>
+
+            <!-- Stat Cards with Hover Animations -->
+            <section class="stats-grid">
+                <div class="stat-card" onmouseover="triggerPulse(this)">
+                    <div class="stat-icon red">🩸</div>
+                    <div class="stat-details">
+                        <h3 class="counter" data-target="1245">0</h3>
+                        <p>Total Donors</p>
+                    </div>
+                    <div class="trend positive">↑ 12% vs last month</div>
+                </div>
+                <div class="stat-card" onmouseover="triggerPulse(this)">
+                    <div class="stat-icon blue">🏥</div>
+                    <div class="stat-details">
+                        <h3 class="counter" data-target="84">0</h3>
+                        <p>Active Requests</p>
+                    </div>
+                    <div class="trend critical">↑ 5 critical</div>
+                </div>
+                <div class="stat-card" onmouseover="triggerPulse(this)">
+                    <div class="stat-icon green">🧬</div>
+                    <div class="stat-details">
+                        <h3 class="counter" data-target="4200">0</h3>
+                        <p>Units Available</p>
+                    </div>
+                    <div class="trend positive">Inventory optimal</div>
+                </div>
+                <div class="stat-card" onmouseover="triggerPulse(this)">
+                    <div class="stat-icon purple">✨</div>
+                    <div class="stat-details">
+                        <h3 class="counter" data-target="8902">0</h3>
+                        <p>Lives Impacted</p>
+                    </div>
+                    <div class="trend positive">↑ 412 this year</div>
+                </div>
+            </section>
+
+            <!-- Interactive Charts Grid -->
+            <section class="charts-grid">
+                <!-- Line Chart -->
+                <div class="bento-box">
+                    <div class="box-header">
+                        <h2>Donation vs Requests (Monthly)</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Doughnut Chart -->
+                <div class="bento-box">
+                    <div class="box-header">
+                        <h2>Blood Group Distribution</h2>
+                    </div>
+                    <div class="chart-container doughnut-wrapper">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Interactive Table -->
+            <section class="table-section">
+                <div class="bento-box">
+                    <div class="box-header">
+                        <h2>Live Blood Requests</h2>
+                        <div class="table-filters">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="urgent">Urgent Only</button>
+                            <button class="filter-btn" data-filter="pending">Pending</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Patient Name</th>
+                                    <th>Blood Type</th>
+                                    <th>Hospital</th>
+                                    <th>Required By</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="interactive-table">
+                                <!-- Filled dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="dashboard.js"></script>
+</body>
+</html>
