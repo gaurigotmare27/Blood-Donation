@@ -1,39 +1,11 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
-const dbPath = path.resolve(__dirname, '../blood_donation.db');
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Error connecting to SQLite database', err.message);
-    } else {
-        console.log('Connected to the SQLite database.');
-        initializeDB();
-    }
-});
+// Using the provided Supabase URL and Service Role Key
+const supabaseUrl = 'https://xeiuodffucezlxqvmipy.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaXVvZGZmdWNlemx4cXZtaXB5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjU4NTM0MiwiZXhwIjoyMDkyMTYxMzQyfQ.YGUpJeAlg2FB3R9yBK4w5dvixk_sqB2-rTs9zQHzBGg';
 
-function initializeDB() {
-    db.serialize(() => {
-        db.run(`
-            CREATE TABLE IF NOT EXISTS donors (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                blood_type TEXT NOT NULL,
-                contact TEXT NOT NULL,
-                city TEXT NOT NULL
-            )
-        `);
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-        db.run(`
-            CREATE TABLE IF NOT EXISTS blood_requests (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                patient_name TEXT NOT NULL,
-                required_blood_type TEXT NOT NULL,
-                hospital_name TEXT NOT NULL,
-                urgency_level INTEGER CHECK(urgency_level BETWEEN 1 AND 5),
-                is_fulfilled BOOLEAN DEFAULT 0
-            )
-        `);
-    });
-}
+console.log('Connected to Supabase PostgreSQL database.');
 
-module.exports = db;
+module.exports = supabase;

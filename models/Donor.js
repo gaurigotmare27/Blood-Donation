@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const supabase = require('../config/database');
 
 const VALID_BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -7,24 +7,45 @@ class Donor {
         return VALID_BLOOD_TYPES.includes(bloodType);
     }
 
-    static create(donorData, callback) {
-        const { name, blood_type, contact, city } = donorData;
+    static async create(donorData, callback) {
+        const { name, blood_type, contact, city, age, weight, health_clearance } = donorData;
         
         if (!this.validateBloodType(blood_type)) {
             return callback(new Error('Invalid blood type'));
         }
 
-        const query = `INSERT INTO donors (name, blood_type, contact, city) VALUES (?, ?, ?, ?)`;
-        db.run(query, [name, blood_type, contact, city], function(err) {
-            callback(err, this ? this.lastID : null);
-        });
+        if (age < 18 || age > 65) return callback(new Error('Age must be between 18 and 65.'));
+        if (weight < 50) return callback(new Error('Weight must be at least 50kg.'));
+        if (!health_clearance) return callback(new Error('Must clear the health declaration.'));
+
+        try {
+            const { data, error } = await supabase
+                .from('donors')
+                .insert([
+                    { name, blood_type, contact, city, age, weight, health_clearance }
+                ])
+                .select();
+                
+            if (error) throw error;
+            callback(null, data ? data[0].id : null);
+        } catch (error) {
+            console.error('Supabase Error (Donor.create):', error);
+            callback(error, null);
+        }
     }
 
-    static getAll(callback) {
-        const query = `SELECT * FROM donors`;
-        db.all(query, [], (err, rows) => {
-            callback(err, rows);
-        });
+    static async getAll(callback) {
+        try {
+            const { data, error } = await supabase
+                .from('donors')
+                .select('*');
+                
+            if (error) throw error;
+            callback(null, data);
+        } catch (error) {
+            console.error('Supabase Error (Donor.getAll):', error);
+            callback(error, null);
+        }
     }
 }
 

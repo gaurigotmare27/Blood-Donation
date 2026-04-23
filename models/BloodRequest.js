@@ -1,29 +1,38 @@
-const db = require('../config/database');
+const supabase = require('../config/database');
 
 class BloodRequest {
-    static create(requestData, callback) {
+    static async create(requestData, callback) {
         const { patient_name, required_blood_type, hospital_name, urgency_level } = requestData;
         
-        const is_fulfilled = 0; // Default boolean as 0 for integer storage in sqlite
-        const query = `INSERT INTO blood_requests (patient_name, required_blood_type, hospital_name, urgency_level, is_fulfilled) VALUES (?, ?, ?, ?, ?)`;
-        
-        db.run(query, [patient_name, required_blood_type, hospital_name, urgency_level, is_fulfilled], function(err) {
-            callback(err, this ? this.lastID : null);
-        });
+        try {
+            const { data, error } = await supabase
+                .from('blood_requests')
+                .insert([
+                    { patient_name, required_blood_type, hospital_name, urgency_level, is_fulfilled: false }
+                ])
+                .select();
+                
+            if (error) throw error;
+            callback(null, data ? data[0].id : null);
+        } catch (error) {
+            console.error('Supabase Error (BloodRequest.create):', error);
+            callback(error, null);
+        }
     }
 
-    static getActive(callback) {
-        // SQLite stores boolean as 0 or 1
-        const query = `SELECT * FROM blood_requests WHERE is_fulfilled = 0`;
-        db.all(query, [], (err, rows) => {
-            if (rows) {
-                // Convert integer 0/1 back to boolean for JSON API response
-                rows.forEach(row => {
-                    row.is_fulfilled = row.is_fulfilled === 1;
-                });
-            }
-            callback(err, rows);
-        });
+    static async getActive(callback) {
+        try {
+            const { data, error } = await supabase
+                .from('blood_requests')
+                .select('*')
+                .eq('is_fulfilled', false);
+                
+            if (error) throw error;
+            callback(null, data);
+        } catch (error) {
+            console.error('Supabase Error (BloodRequest.getActive):', error);
+            callback(error, null);
+        }
     }
 }
 
