@@ -1,12 +1,16 @@
 :root {
-    --bg-main: #ffffff;
+    --bg-main: #f8fafc;
     --card-bg: rgba(255, 255, 255, 0.7);
+    --card-border: rgba(255, 255, 255, 0.5);
     --text-primary: #1e293b;
     --text-secondary: #64748b;
     --accent-red: #ff4757;
     --accent-blue: #3742fa;
     --accent-glow: rgba(255, 71, 87, 0.3);
     --border-color: rgba(255, 255, 255, 0.5);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.6);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -28,26 +32,27 @@ body {
 
 /* Glassmorphism Base Class */
 .glass-panel {
-    background: var(--glass-bg) !important;
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid var(--glass-border) !important;
-    box-shadow: var(--glass-shadow) !important;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
 }
 
 .sidebar { display: none; } /* Reverting to Top Nav */
 
 .app-header {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(15px);
-    border: 1px solid var(--border-color);
-    border-radius: 24px;
-    padding: 1.2rem 2.5rem;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 30px; /* Ultra smooth pill shape */
+    padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 3rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    box-shadow: 0 10px 40px rgba(31, 38, 135, 0.05), inset 0 1px 0 rgba(255,255,255,1);
 }
 
 .main-content { margin-left: 0; padding: 0; }
@@ -60,14 +65,49 @@ body {
 }
 .logo h1 { font-size: 1.7rem; font-weight: 950; letter-spacing: -1.2px; background: linear-gradient(135deg, #1e293b, #475569); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-.main-nav { display: flex; gap: 1rem; align-items: center; }
+.main-nav { display: flex; gap: 0.5rem; align-items: center; } /* Tighter gap for modern feel */
+
 .nav-btn { 
     background: transparent; color: var(--text-secondary); border: none; 
-    padding: 0.7rem 1.4rem; font-size: 0.95rem; font-weight: 700; 
-    cursor: pointer; border-radius: 14px; transition: all 0.3s ease; 
+    padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.5px;
+    cursor: pointer; border-radius: 20px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    position: relative;
 }
-.nav-btn:hover { background: rgba(0,0,0,0.03); color: var(--text-primary); }
-.nav-btn.active { background: #ffffff; color: var(--accent-red); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+.nav-btn:hover { 
+    color: var(--accent-blue); 
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.5);
+}
+.nav-btn.active { 
+    background: white; 
+    color: var(--accent-red); 
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06); 
+    transform: translateY(-2px);
+}
+
+.logout-btn-floating {
+    position: fixed;
+    top: 25px;
+    right: 35px;
+    background: linear-gradient(135deg, #ff4757, #ff6b81);
+    color: white;
+    padding: 0.5rem 1.2rem;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+    z-index: 1000;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+}
+.logout-btn-floating:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(255, 71, 87, 0.5);
+}
 
 .view-section { display: none; animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
 .view-section.active { display: block; }
@@ -81,12 +121,7 @@ body {
 
 .requests-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
 
-/* The true glass-card mapping */
-.glass-panel {
-    background: #ffffff !important;
-    border: 1px solid var(--border-color) !important;
-    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05) !important;
-}
+
 
 .glass-card { 
     background: var(--card-bg); 
@@ -109,7 +144,7 @@ body {
 .patient-info h3 { font-size: 1.6rem; margin-bottom: 0.5rem; font-weight: 700; color: var(--text-primary); }
 .patient-info p { color: var(--text-secondary); font-size: 1rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; }
 
-.retro-form { max-width: 500px; }
+.retro-form { max-width: 500px; margin: 0 auto; }
 .form-group { margin-bottom: 1.5rem; }
 .form-group label { display: block; margin-bottom: 0.8rem; color: var(--text-primary); font-size: 0.95rem; font-weight: 700; }
 .form-group input, .form-group select { 
@@ -152,3 +187,31 @@ body {
 
 .stat-details h3 { font-size: 2rem; font-weight: 950; color: var(--text-primary); margin-bottom: 0.1rem; line-height: 1; }
 .stat-details p { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px; }
+
+/* Auth Screen Styles */
+.auth-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
+    z-index: 9999;
+}
+
+.auth-container .glass-card {
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.auth-container h2 {
+    color: #0f172a;
+}
+
+.auth-container p {
+    color: #475569;
+}

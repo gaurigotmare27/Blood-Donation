@@ -3,6 +3,10 @@ import '../../public/style.css';
 import '../../public/dashboard.css';
 
 export default function App() {
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('lifeblood_user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [currentView, setCurrentView] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -11,8 +15,20 @@ export default function App() {
     setMobileMenuOpen(false);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('lifeblood_user');
+    setUser(null);
+  };
+
+  if (!user) {
+    return <AuthView onLogin={setUser} />;
+  }
+
   return (
     <div className="app-container" style={{maxWidth: '1200px', margin: '0 auto', padding: '2rem'}}>
+      <button className="logout-btn-floating" onClick={handleLogout} title="Logout">
+        LOGOUT <span style={{fontSize: '1rem'}}>🚪</span>
+      </button>
       <header className="app-header" style={{background: 'rgba(255, 255, 255, 0.6)', backdropFilter: 'blur(15px)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.5)', padding: '1.2rem 2.5rem', marginBottom: '3rem', boxShadow: '0 10px 30px rgba(0,0,0,0.03)'}}>
         <div className="logo">
           <div className="blood-drop"></div>
@@ -23,25 +39,115 @@ export default function App() {
           <button className={`nav-btn ${currentView === 'dashboard' ? 'active' : ''}`} onClick={() => navigate('dashboard')}>DASHBOARD</button>
           <button className={`nav-btn ${currentView === 'requests' ? 'active' : ''}`} onClick={() => navigate('requests')}>NETWORK</button>
           <button className={`nav-btn ${currentView === 'donor' ? 'active' : ''}`} onClick={() => navigate('donor')}>DONATE</button>
-          <button className={`nav-btn ${currentView === 'new-request' ? 'active' : ''}`} onClick={() => navigate('new-request')}>BROADCAST</button>
+          <button className={`nav-btn ${currentView === 'new-request' ? 'active' : ''}`} onClick={() => navigate('new-request')}>REQUEST BLOOD</button>
           <button className={`nav-btn ${currentView === 'map' ? 'active' : ''}`} onClick={() => navigate('map')}>MAP</button>
-          <button className={`nav-icon-btn ${currentView === 'profile' ? 'active' : ''}`} onClick={() => navigate('profile')} style={{marginLeft: '1rem'}}>👤</button>
+          <button className={`nav-btn ${currentView === 'profile' ? 'active' : ''}`} onClick={() => navigate('profile')}>PROFILE</button>
         </nav>
       </header>
 
       <main className="main-content">
         {currentView === 'dashboard' && <DashboardView />}
-        {currentView === 'profile' && <ProfileView />}
+        {currentView === 'profile' && <ProfileView user={user} />}
         {currentView === 'map' && <MapView />}
         {currentView === 'requests' && <RequestsView />}
-        {currentView === 'donor' && <DonorPortal />}
+        {currentView === 'donor' && <DonorPortal user={user} />}
         {currentView === 'new-request' && <NewRequest />}
       </main>
     </div>
   );
 }
 
+function AuthView({ onLogin }) {
+  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({ email: '', password: '', full_name: '', blood_type: 'O+', city: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    const baseUrl = 'http://127.0.0.1:5000';
+    const endpoint = isLogin ? `${baseUrl}/api/users/login` : `${baseUrl}/api/users/register`;
+    
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+      
+      localStorage.setItem('lifeblood_user', JSON.stringify(data));
+      onLogin(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-container" style={{display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', width: '100vw', position: 'fixed', top: 0, left: 0, background: '#f8fafc', zIndex: 10000, padding: '20px'}}>
+      <div className="glass-card" style={{width: '100%', maxWidth: '450px', padding: '3rem', background: 'white', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', borderRadius: '24px', border: '1px solid #e2e8f0'}}>
+        <div style={{textAlign: 'center', marginBottom: '2.5rem'}}>
+          <div className="blood-drop" style={{margin: '0 auto 1.5rem', width: '40px', height: '40px'}}></div>
+          <h2 style={{fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-1.5px'}}>{isLogin ? 'Welcome Back' : 'Join LifeBlood'}</h2>
+          <p style={{color: 'var(--text-secondary)'}}>{isLogin ? 'Enter your credentials to continue' : 'Become a life saver today'}</p>
+        </div>
+
+        <form className="retro-form" onSubmit={handleSubmit}>
+          {!isLogin && (
+            <div className="form-group">
+              <label>FULL NAME</label>
+              <input type="text" required value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} placeholder="Ex: Jane Doe" />
+            </div>
+          )}
+          <div className="form-group">
+            <label>EMAIL ADDRESS</label>
+            <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="name@example.com" />
+          </div>
+          <div className="form-group">
+            <label>PASSWORD</label>
+            <input type="password" required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="••••••••" />
+          </div>
+          {!isLogin && (
+            <div style={{display: 'flex', gap: '1rem'}}>
+              <div className="form-group" style={{flex: 1}}>
+                <label>BLOOD TYPE</label>
+                <select value={formData.blood_type} onChange={e => setFormData({...formData, blood_type: e.target.value})}>
+                  {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(type => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </div>
+              <div className="form-group" style={{flex: 1}}>
+                <label>CITY</label>
+                <input type="text" required value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} placeholder="Ex: Mumbai" />
+              </div>
+            </div>
+          )}
+
+          {error && <p style={{color: 'var(--accent-red)', fontSize: '0.9rem', marginBottom: '1.5rem', fontWeight: 600}}>⚠️ {error}</p>}
+
+          <button type="submit" className="submit-btn" disabled={loading} style={{marginTop: '1rem'}}>
+            {loading ? 'PROCESSING...' : (isLogin ? 'LOGIN' : 'SIGN UP')}
+          </button>
+        </form>
+
+        <p style={{textAlign: 'center', marginTop: '2rem', color: 'var(--text-secondary)', fontSize: '0.95rem'}}>
+          {isLogin ? "Don't have an account?" : "Already have an account?"}
+          <button onClick={() => setIsLogin(!isLogin)} style={{background: 'none', border: 'none', color: 'var(--accent-blue)', fontWeight: 800, cursor: 'pointer', marginLeft: '8px'}}>
+            {isLogin ? 'Sign Up' : 'Login'}
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function DashboardView() {
+  // ... (unchanged)
   useEffect(() => {
     // Stat Initialization
     const counters = document.querySelectorAll('.counter');
@@ -177,73 +283,49 @@ function DashboardView() {
   );
 }
 
-function ProfileView() {
-  const [donorData, setDonorData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const res = await fetch('/api/donors');
-        if (!res.ok) throw new Error('Failed to fetch profile');
-        const data = await res.json();
-        
-        if (data && data.length > 0) {
-            setDonorData(data[0]); // Grab the first donor naturally as a profile mockup
-        } else {
-            setDonorData(null);
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchProfile();
-  }, []);
-
-  if (loading) return <section className="view-section active"><div className="loading-state">Loading your profile...</div></section>;
-  if (error) return <section className="view-section active"><div style={{color:'var(--accent-red)'}}>Error: {error}</div></section>;
-
-  const donorName = donorData ? donorData.name : "Unregistered User";
-  const donorId = donorData ? donorData.id.toString().padStart(5, '0') : "-----";
-  const bloodType = donorData ? donorData.blood_type : "N/A";
-  const isRegistered = !!donorData;
+function ProfileView({ user }) {
+  const donorName = user.full_name || "Unregistered User";
+  const donorId = user.id.toString().substring(0, 8).toUpperCase();
+  const bloodType = user.blood_type || "N/A";
+  const city = user.city || "Not set";
 
   return (
     <section className="view-section active">
-        <div className="donor-dashboard-layout" style={{display: 'flex', flexDirection: 'column', gap: '2.5rem'}}>
-            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem'}}>
-                <div className="glass-card" style={{padding: '2.5rem', display: 'flex', alignItems: 'center', gap: '2rem', background: 'rgba(255, 255, 255, 0.4)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.3)'}}>
-                    <div style={{width: '90px', height: '90px', background: 'rgba(55, 66, 250, 0.1)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem'}}>👤</div>
-                    <div>
-                        <h3 style={{fontSize: '1.8rem', fontWeight: 900, letterSpacing: '-1px', color: '#1e293b'}}>{donorName}</h3>
-                        <p style={{color: '#64748b', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '1.5px'}}>Donor ID #{donorId}</p>
-                    </div>
-                </div>
+        <div className="donor-dashboard-layout" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', alignItems: 'start'}}>
+            {/* Member Card Component */}
+            <div className="glass-card" style={{padding: '2.5rem 2rem', textAlign: 'center'}}>
+                <div style={{width: '110px', height: '110px', background: 'linear-gradient(135deg, #a29bfe, #6c5ce7)', border: '4px solid white', borderRadius: '50%', margin: '0 auto 1.5rem auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3.5rem', boxShadow: '0 15px 30px rgba(108, 92, 231, 0.25)', color: 'white'}}>👤</div>
+                <h3 style={{fontSize: '1.8rem', color: 'var(--text-primary)', fontWeight: 800, letterSpacing: '-0.8px', marginBottom: '0.4rem'}}>{donorName}</h3>
+                <p style={{color: 'var(--text-secondary)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 700}}>User ID: #{donorId}</p>
+                <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem'}}>📍 {city}</p>
                 
-                <div className="glass-card" style={{padding: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 71, 87, 0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.3)'}}>
-                    <div>
-                        <p style={{color: '#64748b', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '1.5px', marginBottom: '0.5rem'}}>Type</p>
-                        <h3 style={{fontSize: '3.5rem', fontWeight: 950, color: '#ff4757', lineHeight: 1}}>{bloodType}</h3>
-                    </div>
-                    <div style={{width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(255, 71, 87, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff4757', fontSize: '1.8rem'}}>🧬</div>
+                <div style={{display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '2rem'}}>
+                    <button className="nav-btn active" style={{width: '100%', border: '1px solid rgba(255, 62, 87, 0.1)', padding: '1rem'}}>ACTIVE OVERVIEW</button>
+                    <button className="nav-btn" style={{width: '100%', padding: '1rem'}}>MEDICAL LOGS</button>
+                    <button className="nav-btn" style={{width: '100%', padding: '1rem'}}>CERTIFICATES</button>
                 </div>
             </div>
+            
+            <div style={{display: 'flex', flexDirection: 'column', gap: '2rem'}}>
+                <div className="glass-card" style={{padding: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, rgba(255, 71, 87, 0.05), rgba(255, 71, 87, 0.1))', border: '1px solid rgba(255, 71, 87, 0.2)'}}>
+                    <div>
+                        <p style={{color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase', fontSize: '0.8rem', letterSpacing: '1.5px', marginBottom: '0.5rem'}}>Blood Type</p>
+                        <h3 style={{fontSize: '3.5rem', fontWeight: 950, color: 'var(--accent-red)', lineHeight: 1}}>{bloodType}</h3>
+                    </div>
+                    <div style={{width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(255, 71, 87, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-red)', fontSize: '1.8rem'}}>🧬</div>
+                </div>
 
-            <div className="glass-card" style={{padding: '3rem', background: 'rgba(255, 255, 255, 0.4)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.3)'}}>
-                 <div style={{display: 'flex', alignItems: 'center', gap: '2.5rem'}}>
-                    <div style={{fontSize: '3.5rem', filter: 'drop-shadow(0 0 10px rgba(0,0,0,0.05))'}}>{isRegistered ? '🛡️' : '⚠️'}</div>
-                    <div style={{flex: 1}}>
-                        <h2 style={{fontSize: '2.2rem', fontWeight: 950, color: isRegistered ? '#1e293b' : '#ff4757', letterSpacing: '-1px', margin: 0}}>
-                            {isRegistered ? 'Life-Saving Link Operational' : 'Action Required: Network Sync'}
+                <div className="glass-card" style={{padding: '2.5rem', display: 'flex', alignItems: 'center', gap: '2rem'}}>
+                    <div style={{fontSize: '3rem'}}>✅</div>
+                    <div>
+                        <h2 style={{fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px', margin: 0}}>
+                            Verified Account
                         </h2>
-                        <p style={{color: '#64748b', fontWeight: 600, fontSize: '1.1rem', maxWidth: '600px', margin: '0.5rem 0 0 0'}}>
-                            {isRegistered ? 'Your medical vitals are synced with the global network. You are eligible to donate.' : 'Please update your health declaration to activate your donor status.'}
+                        <p style={{color: 'var(--text-secondary)', fontWeight: 500, marginTop: '0.4rem'}}>
+                            Your medical profile is active. You can now participate in the blood donation network.
                         </p>
                     </div>
-                 </div>
+                </div>
             </div>
         </div>
     </section>
@@ -258,7 +340,7 @@ function RequestsView() {
     const fetchRequests = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/blood-requests/active');
+            const res = await fetch('http://127.0.0.1:5000/api/blood-requests/active');
             if(!res.ok) throw new Error('API failed.');
             const data = await res.json();
             setRequests(data);
@@ -395,27 +477,29 @@ function MapView() {
     );
 }
 
-function DonorPortal() {
+function DonorPortal({ user }) {
     return (
         <section className="view-section active">
             <div style={{maxWidth: '600px', margin: '0 auto'}}>
                 <h2 style={{fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.5rem', letterSpacing: '-1.5px'}}>Join the Network</h2>
                 <p style={{color: 'var(--text-secondary)', marginBottom: '2.5rem'}}>Become a verified life-saver in less than 60 seconds.</p>
                 
-                <div className="glass-card" style={{padding: '3rem', background: '#0d1117'}}>
+                <div className="glass-card" style={{padding: '3rem'}}>
                     <form className="retro-form" onSubmit={(e) => {
                         e.preventDefault();
                         alert("Securely transmitting data...");
                     }}>
-                        <div className="form-group"><label>FULL NAME</label><input type="text" required placeholder="Ex: Jane Doe"/></div>
-                        <div className="form-group"><label>BLOOD TYPE</label><select required><option>A+</option><option>O-</option></select></div>
+                        <div className="form-group"><label>FULL NAME</label><input type="text" required defaultValue={user.full_name} placeholder="Ex: Jane Doe" style={{color: 'var(--text-primary)'}}/></div>
+                        <div className="form-group"><label>BLOOD TYPE</label><select required defaultValue={user.blood_type} style={{color: 'var(--text-primary)'}}>
+                            {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(type => <option key={type} value={type}>{type}</option>)}
+                        </select></div>
                         <div style={{display: 'flex', gap: '2rem', marginBottom: '1.5rem'}}>
-                            <div className="form-group" style={{flex: 1}}><label>AGE</label><input type="number" required min="18" max="65" placeholder="18-65"/></div>
-                            <div className="form-group" style={{flex: 1}}><label>WEIGHT (KG)</label><input type="number" required min="50" placeholder="Min 50"/></div>
+                            <div className="form-group" style={{flex: 1}}><label>AGE</label><input type="number" required min="18" max="65" placeholder="18-65" style={{color: 'var(--text-primary)'}}/></div>
+                            <div className="form-group" style={{flex: 1}}><label>WEIGHT (KG)</label><input type="number" required min="50" placeholder="Min 50" style={{color: 'var(--text-primary)'}}/></div>
                         </div>
                         <div className="form-group" style={{background: 'rgba(255, 62, 62, 0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255, 62, 62, 0.1)'}}>
                             <label style={{color: 'var(--accent-red)', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px'}}>⚕️ Health Clearance</label>
-                            <label style={{fontSize: '0.85rem', lineHeight: '1.5', display: 'flex', gap: '0.8rem', cursor: 'pointer', color: '#8b949e'}}>
+                            <label style={{fontSize: '0.85rem', lineHeight: '1.5', display: 'flex', gap: '0.8rem', cursor: 'pointer', color: 'var(--text-secondary)'}}>
                                 <input type="checkbox" required style={{width: 'auto', marginTop: '4px'}}/>
                                 I declare I am fit for donation.
                             </label>
@@ -429,16 +513,18 @@ function DonorPortal() {
 }
 
 function NewRequest() {
+    const [urgency, setUrgency] = useState(3);
+
     return (
         <section className="view-section active">
             <div style={{maxWidth: '600px', margin: '0 auto'}}>
                 <h2 style={{fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.5rem', letterSpacing: '-1.5px'}}>Broadcast Emergency</h2>
                 <p style={{color: 'var(--text-secondary)', marginBottom: '2.5rem'}}>Instantly alert the donor network to critical needs.</p>
-                <div className="glass-card" style={{padding: '3rem', background: '#0d1117'}}>
-                    <form className="retro-form">
-                        <div className="form-group"><label>PATIENT NAME</label><input type="text" required placeholder="Ex: Alex Johnson"/></div>
+                <div className="glass-card" style={{padding: '3rem'}}>
+                    <form className="retro-form" onSubmit={(e) => { e.preventDefault(); alert(`Broadcast initiated with Urgency Level ${urgency}!`); }}>
+                        <div className="form-group"><label>PATIENT NAME</label><input type="text" required placeholder="Ex: Alex Johnson" style={{color: 'var(--text-primary)'}}/></div>
                         <div className="form-group"><label>BLOOD TYPE</label>
-                            <select required style={{width: '100%', padding: '0.9rem 0', background: 'transparent', border: 'none', borderBottom: '2px solid var(--border-color)', color: 'white', outline: 'none'}}>
+                            <select required style={{width: '100%', padding: '0.9rem 0', background: 'transparent', border: 'none', borderBottom: '2px solid var(--border-color)', color: 'var(--text-primary)', outline: 'none'}}>
                                 <option value="" disabled selected>Select Blood Type</option>
                                 <option value="A+">A+</option><option value="A-">A-</option>
                                 <option value="B+">B+</option><option value="B-">B-</option>
@@ -446,12 +532,36 @@ function NewRequest() {
                                 <option value="O+">O+</option><option value="O-">O-</option>
                             </select>
                         </div>
-                        <div className="form-group"><label>HOSPITAL BRANCH</label><input type="text" required placeholder="Branch Name"/></div>
-                        <div className="form-group"><label>URGENCY LEVEL</label>
+                        <div className="form-group"><label>HOSPITAL BRANCH</label><input type="text" required placeholder="Branch Name" style={{color: 'var(--text-primary)'}}/></div>
+                        <div className="form-group"><label>URGENCY LEVEL (1 = Low, 5 = Critical)</label>
                             <div style={{display:'flex', gap:'1rem', marginTop:'0.5rem'}}>
-                                {[1,2,3,4,5].map(lv => (
-                                    <button key={lv} type="button" style={{flex:1, padding:'0.8rem', background: lv > 3 ? 'rgba(255,62,62,0.2)' : 'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'8px', color: lv > 3 ? 'var(--accent-red)' : 'white', fontWeight: 800}}>{lv}</button>
-                                ))}
+                                {[1,2,3,4,5].map(lv => {
+                                    const isSelected = urgency === lv;
+                                    const isHigh = lv > 3;
+                                    const bg = isSelected ? (isHigh ? '#ff4757' : '#3742fa') : (isHigh ? 'rgba(255, 71, 87, 0.1)' : 'rgba(0,0,0,0.03)');
+                                    const color = isSelected ? 'white' : (isHigh ? '#ff4757' : 'var(--text-primary)');
+                                    
+                                    return (
+                                        <button 
+                                            key={lv} 
+                                            type="button" 
+                                            onClick={() => setUrgency(lv)}
+                                            style={{
+                                                flex:1, padding:'0.8rem', 
+                                                background: bg, 
+                                                border: isSelected ? 'none' : '1px solid rgba(0,0,0,0.05)', 
+                                                borderRadius:'8px', 
+                                                color: color, 
+                                                fontWeight: 800,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                transform: isSelected ? 'scale(1.05)' : 'none',
+                                                boxShadow: isSelected ? `0 4px 10px ${isHigh ? 'rgba(255,71,87,0.3)' : 'rgba(55,66,250,0.3)'}` : 'none'
+                                            }}>
+                                            {lv}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                         <button type="submit" className="submit-btn danger-btn" style={{marginTop: '2rem', padding: '1.4rem'}}>INITIATE BROADCAST</button>
